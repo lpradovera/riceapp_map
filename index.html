@@ -1,0 +1,110 @@
+<html>
+  <head>
+    <title>GMaps</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gmap3/6.1.0/gmap3.min.js"></script>
+    <style type="text/css">
+    #gmap {
+      width: 800px;
+      height: 600px;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="gmap"></div>
+    <script type="text/javascript">
+    var mapCenterLat = 45.32022720000001;
+    var mapCenterLon = 8.41857349999998;
+    var dataURL = "http://cors.io/?u=http%3A%2F%2Fwww.riceapp.eu%2Fapi%2Fphotos%3Fdistance%3D150%26lat%3D" + mapCenterLat + "%26lng%3D" + mapCenterLon
+
+    var icons = {
+      'foto':     "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      'luogo':    "http://maps.google.com/mapfiles/ms/icons/ltblue-dot.png",
+      'turismo':  "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+      'ristoro':  "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
+      'agricola': "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+      'evento':   "http://maps.google.com/mapfiles/ms/icons/purple-dot.png"
+    }
+
+    $(function(){
+      startLoad();
+    });
+
+    function initMap(markers) {
+      $('#gmap').gmap3({
+       map:{
+          options:{
+           center: [mapCenterLat, mapCenterLon],
+           zoom: 10,
+           mapTypeId: google.maps.MapTypeId.ROADMAP,
+           mapTypeControl: true,
+           mapTypeControlOptions: {
+             style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+           },
+           navigationControl: true,
+           scrollwheel: true,
+           streetViewControl: true
+          }
+        },
+        marker:{
+          values: markers || [],
+          options:{
+            draggable: false
+          },
+          events:{
+            click: function(marker, event, context){
+              console.log(marker);
+              var map = $(this).gmap3("get"),
+                infowindow = $(this).gmap3({get:{name:"infowindow"}});
+              if (infowindow){
+                infowindow.open(map, marker);
+                infowindow.setContent(context.data);
+              } else {
+                $(this).gmap3({
+                  infowindow:{
+                    anchor:marker,
+                    options:{content: context.data}
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function startLoad() {
+       $.getJSON( dataURL, function(data) {
+        var markers = [];
+        $.each( data, function(i, marker) {
+          var tmp_marker = {
+            lat: marker.lat,
+            lng: marker.lng,
+            data: buildInfo(marker),
+            options: {
+              icon: icons[marker.type] || "http://maps.google.com/mapfiles/marker_green.png"
+            }
+          }
+          markers.push(tmp_marker);
+        });
+        initMap(markers);
+      });
+    }
+
+    function buildInfo(marker) {
+      var info = "<b>" + marker.name + "</b><br>";
+      info += "<i>" + marker.address + "</i><br>";
+      info += "<i>Tel. " + marker.phone + "</i><br>";
+      if (marker.web) {
+        info += "<i>Web <a href=\"" + marker.web + "\"></a></i><br>";
+      }
+      info += marker.description + "<br>";
+      if (marker.image) {
+        info += "<a href=\"" + marker.image + "\" target=\"_blank\"><img src=\"" + marker.image + "\" width=\"160\"></a>";
+      }
+      return info;
+    }
+    </script>
+  </body>
+</html>
